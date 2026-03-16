@@ -8,7 +8,7 @@
  * 
  * Author: Bruce Gustin
  * Date Written: July 8, 2025
- * Version 1.2 - Fixed VR movement direction
+ * Version 1.1 - Fixed VR movement direction
  *************************************************************************************************/
 
 
@@ -52,6 +52,7 @@ public class ZombieHealth : MonoBehaviour
 	private bool isSinking;											//Is the zombie currently sinking?
 	public bool headHome { get; private set; }					    //Heads home
 	public bool isCured;						 				    //Mark this clone cured
+	private bool willRelapse = true;                                //This occurs when the last shot at the zombie is not with the Plushizer
 	private bool lastCycleOfLastZombieCured;					    //Mark last zombie cured
 
 	//Reset() defines the default values for properties in the inspector
@@ -95,13 +96,20 @@ public class ZombieHealth : MonoBehaviour
 		transform.Translate(-Vector3.up * sinkSpeed * Time.deltaTime);
 	}
 
-	//This method is called whenever the zombie is hit with a healing beam
+	//This method is called whenever the zombie is hit with a healing or plushizing beam
 	public void ImproveHealth(string typeOfBeam)
     {
 		switch (typeOfBeam)
         {
 			case "Healing_Indicator":
 				ImproveHealth(GameManager.Instance.healingFromHealingBeam);
+				break;
+			case "Plushize_Indicator":
+				if (lastCycleOfLastZombieCured)
+				{
+					willRelapse = false;
+					ImproveHealth(999);  //Value irrevelent, this will plushize this zombie
+				}
 				break;
 			case "HealingShroudDebuff":
 				ImproveHealth(GameManager.Instance.healingFromHealingShroud);
@@ -132,7 +140,7 @@ public class ZombieHealth : MonoBehaviour
 			{
 				isCured = true;
 
-				// Only plushize if all of this type zombie is cured
+				// Only plushize if all zombies are cured
 				if (Spawner.lastCured)
 				{
 					if (!lastCycleOfLastZombieCured)
@@ -145,15 +153,11 @@ public class ZombieHealth : MonoBehaviour
 						//Set new NavMesh Agent destination
 						headHome = true;
 
-						// This allows you to start curing the infection
-
 						//Stop playing particle effect
 						lastZombieIndicator.Stop();
 
-						if (GameManager.Instance.Infection?.activeInHierarchy != false)
-						{
+						if (willRelapse)
 							StartCoroutine(RelapseZombies());
-						}
                     }
 				}
 				else
@@ -164,7 +168,6 @@ public class ZombieHealth : MonoBehaviour
 			else
 			{
 				// Regular respawn cycle
-				
 				RespawnNextCycle();
 			}
 		}
@@ -217,7 +220,6 @@ public class ZombieHealth : MonoBehaviour
 		isSinking = true;
 	}
 
-	// This converts the plushy back to a zombie after a relapse time
 	IEnumerator RelapseZombies()
     {
 		//Wait then head back to target

@@ -43,9 +43,11 @@ public class ZombieMovement : MonoBehaviour
 		string prefabName = gameObject.name.Replace("(Clone)", "");
 		string targetName = prefabName + "Home";
 
-		plushyHome = GameObject.Find(targetName).transform;
-
-		if (plushyHome == null)
+		if (plushyHome != null)
+		{
+			plushyHome = GameObject.Find(targetName).transform;
+		}
+		else
         {
 			Debug.LogWarning($"No spawn point found with name: {targetName}");
 		}
